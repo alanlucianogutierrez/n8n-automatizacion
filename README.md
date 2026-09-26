@@ -31,3 +31,18 @@ architecture_diagram.png: diagrama de arquitectura del sistema.
 ## Stack
 
 Notion (base de datos y trigger), n8n (orquestacion), OpenRouter con GPT-4o-mini (clasificacion IA), Slack (aprobacion humana), Gmail (contacto al lead).
+
+
+## Capturas de evidencia
+
+Se incluye una carpeta con capturas de pantalla que documentan el funcionamiento de la automatizacion en n8n y los tableros de Notion. La carpeta esta en entrega-final/screenshots dentro de este repositorio.
+
+Capturas de n8n: flujo completo con todos los nodos (01_n8n_workflow_complete.jpg), una ejecucion exitosa del camino feliz con un lead VIP (02_n8n_ejecucion_exitosa_vip.jpg), y una ejecucion con error mostrando el manejo de errores del flujo (03_n8n_ejecucion_error.jpg y 04_n8n_detalle_error_slack.jpg).
+
+Capturas de Notion: vista de tablero KPIs agrupada por Estado (06_notion_dashboard_kpis_estado.jpg), vista de tablero VIP vs No VIP agrupada por Clasificacion IA (05_notion_dashboard_vip_vs_novip.jpg), y la tabla principal de leads (07_notion_tabla_leads.jpg).
+
+Nota sobre el uso publico de n8n: el plan actual de n8n Cloud no ofrece una opcion para publicar el canvas del flujo con una URL publica de solo lectura, a diferencia de Notion. Por eso la evidencia del flujo de n8n se documenta mediante el archivo workflow.json exportado (incluido en este repositorio) junto con las capturas de pantalla del flujo, sus ejecuciones exitosas y sus ejecuciones con error.
+
+## Video demo
+
+Video de demostracion del proyecto: https://drive.google.com/file/d/1Q-BXNOQiaX2zwwk1fYs9jnu5Uj1ac7b1/view?usp=sharing
