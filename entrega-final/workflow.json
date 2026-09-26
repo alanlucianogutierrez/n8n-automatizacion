@@ -1,0 +1,606 @@
+{
+  "name": "Ecosistema Final - Clasificación de Leads VIP",
+  "nodes": [
+    {
+      "parameters": {
+        "model": "openai/gpt-4o-mini",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        256,
+        -144
+      ],
+      "id": "8dd344cb-af6c-4997-904b-832cac8b4b28",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "4GVJXwi9qt8faDXh",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un asistente que clasifica leads comerciales para un equipo de ventas. Analiza el siguiente lead y determina si es VIP o No VIP según estos criterios: alto volumen de compra o presupuesto mencionado, cargo directivo (gerente, director o dueño), empresa de más de 500 empleados, o cliente recurrente. Basta con que el lead cumpla AL MENOS UNO de estos criterios para clasificarlo como VIP.\n\nDatos del lead:\nNombre: {{ $json.Nombre }}\nEmail: {{ $json.Email }}\nCanal de origen: {{ $json['Canal de origen'] }}\nMensaje: {{ $json.Mensaje }}\n\nResponde UNICAMENTE con una de estas dos palabras exactas, sin explicaciones ni texto adicional: VIP o No VIP",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -384,
+        -432
+      ],
+      "id": "129d64e3-9194-4864-997e-6095742f23d2",
+      "name": "Clasificar Lead con IA (OpenRouter)",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "328a20b7-d853-4953-9979-8c7e40d8f2dc",
+              "leftValue": "={{ $json.Estado === 'Pendiente' }}",
+              "rightValue": "Pendiente",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        80,
+        -144
+      ],
+      "id": "4eedd0dc-bfb8-48f3-808c-05534b3ec80c",
+      "name": "Filtro anti-bucle infinito"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "authentication": "oAuth2",
+        "dataSourceId": {
+          "__rl": true,
+          "value": "3e751928-d601-80f9-b719-000bb0219637",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://app.notion.com/p/3e751928d60180a49981f95b7b46dbde"
+        }
+      },
+      "type": "n8n-nodes-base.notionTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -144,
+        -144
+      ],
+      "id": "73e07494-37e3-405e-b78f-7640c39498ff",
+      "name": "Disparador de Notion",
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "A0RK19N4ouDTgTZi",
+          "name": "Notion account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('Disparador de Notion').item.json.id }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Estado|status",
+              "statusValue": "Error"
+            },
+            {
+              "key": "Mensaje de Error|rich_text",
+              "textContent": "={{  $json.error  }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        608,
+        -176
+      ],
+      "id": "024b1514-5a85-4f71-9793-504382d41c37",
+      "name": "Manejador de Errores - Actualizar Estado en Notion",
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "A0RK19N4ouDTgTZi",
+          "name": "Notion account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "90f17b1b-641c-4451-9fff-430360999068",
+              "leftValue": "={{ $json.text.trim() === 'VIP' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -16,
+        -528
+      ],
+      "id": "75649657-09fd-4c8a-af35-e737cca90bfa",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{  $('Disparador de Notion').item.json.id  }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Clasificación IA|select",
+              "selectValue": "VIP"
+            },
+            {
+              "key": "Estado|status",
+              "statusValue": "Procesado por IA"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        208,
+        -560
+      ],
+      "id": "aa074ad3-5fef-4372-adb4-9c5124fcdba0",
+      "name": "Actualizar Clasificación VIP en Notion",
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "A0RK19N4ouDTgTZi",
+          "name": "Notion account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{  $('Disparador de Notion').item.json.id  }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Clasificación IA|select",
+              "selectValue": "No VIP"
+            },
+            {
+              "key": "Estado|status",
+              "statusValue": "Procesado por IA"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        400,
+        -416
+      ],
+      "id": "9767c252-6a39-4522-be51-86de4ffdb0ad",
+      "name": "Actualizar Clasificación No VIP en Notion",
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "A0RK19N4ouDTgTZi",
+          "name": "Notion account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "sendAndWait",
+        "user": {
+          "__rl": true,
+          "value": "U0C4GN03E1K",
+          "mode": "list",
+          "cachedResultName": "Alan Gutierrez (@alanlucianogutierrez)"
+        },
+        "message": "=Nuevo Lead VIP para revisión humana.\nNombre: {{ $('Disparador de Notion').item.json['Nombre'] }}\nEmail: {{ $('Disparador de Notion').item.json['Email'] }}\nMensaje del lead: {{ $('Disparador de Notion').item.json['Mensaje'] }}\n\n¿Aprobás contactar a este lead clasificado como VIP?",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double",
+            "approveLabel": "Aprobar",
+            "disapproveLabel": "Rechazar"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        592,
+        -560
+      ],
+      "id": "6bc723d4-49db-4efb-b5b8-16d9e73e0d63",
+      "name": "Solicitar Aprobación Humana en Slack (HITL)",
+      "webhookId": "64bc9176-893a-4430-bfdb-5288c712b36f",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "2RduCi0Do1KFLWeO",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "61dbbd8b-3db0-4922-afdd-8d69930ad1c4",
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        752,
+        -464
+      ],
+      "id": "acd6bc99-d77e-4a95-b588-a1a117fed913",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('Disparador de Notion').item.json.id }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "=Estado|status",
+              "statusValue": "=Aprobado por Humano"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        944,
+        -624
+      ],
+      "id": "549675b0-3a2f-449a-9568-22334a3260db",
+      "name": "Actualizar Estado a Aprobado en Notion",
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "A0RK19N4ouDTgTZi",
+          "name": "Notion account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{  $('Disparador de Notion').item.json.id  }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "=Estado|status",
+              "statusValue": "=Rechazado por Humano"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        944,
+        -336
+      ],
+      "id": "11c30a51-a312-4c18-bc89-4a8a5b5e9660",
+      "name": "Actualizar Estado a Rechazado en Notion",
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "A0RK19N4ouDTgTZi",
+          "name": "Notion account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{  $('Disparador de Notion').item.json.Email  }}",
+        "subject": "=Gracias por tu interés, {{  $('Disparador de Notion').item.json.Nombre  }}",
+        "message": "=Hola {{  $('Disparador de Notion').item.json.Nombre }},<br><br>Gracias por tu interés en nuestros productos. Hemos recibido tu mensaje: \"{{ $('Disparador de Notion').item.json.Mensaje }}\"<br><br>Uno de nuestros asesores especializados se pondrá en contacto contigo a la brevedad para brindarte una atención personalizada.<br><br>Saludos cordiales,<br>Equipo Comercial",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        -512
+      ],
+      "id": "f233dab2-6225-4137-9cdf-20249a27f95a",
+      "name": "Enviar Email de Contacto al Lead (Gmail)",
+      "webhookId": "a5c696f9-6eb1-40aa-9bcc-553f156010b3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "nzmM3TidqHSojGG3",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{  $('Disparador de Notion').item.json.id  }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Estado|status",
+              "statusValue": "Contactado"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        1344,
+        -512
+      ],
+      "id": "e9e4e619-f548-49f6-9381-53e730806fb5",
+      "name": "Actualizar Estado a Contactado en Notion",
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "A0RK19N4ouDTgTZi",
+          "name": "Notion account 4"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Clasificar Lead con IA (OpenRouter)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificar Lead con IA (OpenRouter)": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Manejador de Errores - Actualizar Estado en Notion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtro anti-bucle infinito": {
+      "main": [
+        [
+          {
+            "node": "Clasificar Lead con IA (OpenRouter)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Disparador de Notion": {
+      "main": [
+        [
+          {
+            "node": "Filtro anti-bucle infinito",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Clasificación VIP en Notion",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Actualizar Clasificación No VIP en Notion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar Clasificación VIP en Notion": {
+      "main": [
+        [
+          {
+            "node": "Solicitar Aprobación Humana en Slack (HITL)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Solicitar Aprobación Humana en Slack (HITL)": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Estado a Aprobado en Notion",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Actualizar Estado a Rechazado en Notion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar Estado a Rechazado en Notion": {
+      "main": [
+        []
+      ]
+    },
+    "Actualizar Estado a Aprobado en Notion": {
+      "main": [
+        [
+          {
+            "node": "Enviar Email de Contacto al Lead (Gmail)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Email de Contacto al Lead (Gmail)": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Estado a Contactado en Notion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}
